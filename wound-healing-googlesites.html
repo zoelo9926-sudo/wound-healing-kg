@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>傷口癒合預測模型 — 知識圖譜</title>
+<style>
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--border:#475569;--text:#e2e8f0;--text2:#94a3b8;--accent:#38bdf8;--green:#34d399;--yellow:#fbbf24;--red:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.header{background:linear-gradient(135deg,#1e3a5f 0%,#0f172a 100%);padding:30px 20px;text-align:center;border-bottom:1px solid var(--border)}
+.header h1{font-size:1.8em;margin-bottom:8px;background:linear-gradient(90deg,var(--accent),#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header p{color:var(--text2);font-size:1em}
+.stats{display:flex;justify-content:center;gap:24px;margin-top:16px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-size:1.6em;font-weight:bold;color:var(--accent)}
+.stat-label{font-size:0.8em;color:var(--text2)}
+.nav{background:var(--surface);padding:10px 16px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;border-bottom:1px solid var(--border)}
+.nav button{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 14px;border-radius:18px;cursor:pointer;font-size:0.85em}
+.nav button:hover,.nav button.active{background:var(--accent);color:#0f172a;border-color:var(--accent)}
+.main{max-width:1100px;margin:0 auto;padding:16px}
+.section{display:none}
+.section.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px}
+.card h3{margin-bottom:6px;font-size:1.05em}
+.card .meta{color:var(--text2);font-size:0.8em;margin-bottom:10px}
+.card .tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7em;margin:2px}
+.tag-tool{background:#4a148c;color:#e1bee7}
+.tag-model{background:#1b5e20;color:#a5d6a7}
+.tag-lit{background:#e65100;color:#ffcc80}
+.tag-concept{background:#01579b;color:#b3e5fc}
+.tag-research{background:#880e4f;color:#f8bbd0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:0.9em}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+th{background:var(--surface2);color:var(--accent);font-weight:600}
+.score-bar{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:3px 0}
+.score-fill{height:100%;border-radius:3px}
+.kg-node{display:inline-block;padding:4px 12px;border-radius:8px;margin:3px;font-size:0.85em}
+.footer{text-align:center;padding:24px;color:var(--text2);font-size:0.8em;border-top:1px solid var(--border);margin-top:30px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}.header h1{font-size:1.4em}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🩹 傷口癒合預測模型 — 知識圖譜</h1>
+  <p>整合 PubMed 文獻搜尋結果，涵蓋評估工具、預測模型與關鍵研究</p>
+  <div class="stats">
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">評估工具</div></div>
+    <div class="stat"><div class="stat-num">7</div><div class="stat-label">預測模型</div></div>
+    <div class="stat"><div class="stat-num">15</div><div class="stat-label">文獻筆記</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">核心概念</div></div>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="active" onclick="showSection('overview',this)">📊 總覽</button>
+  <button onclick="showSection('tools',this)">📋 評估工具</button>
+  <button onclick="showSection('models',this)">🤖 預測模型</button>
+  <button onclick="showSection('literature',this)">📚 文獻</button>
+  <button onclick="showSection('comparison',this)">📈 效能比較</button>
+  <button onclick="showSection('kg',this)">🕸️ 知識圖譜</button>
+</div>
+
+<div class="main">
+
+<!-- OVERVIEW -->
+<div id="overview" class="section active">
+  <h2 style="margin-bottom:16px;">📊 總覽</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>📋 評估工具</h3>
+      <div class="meta">7 個標準化評估量表，提供客觀量化分數</div>
+      <p>BWAT、PWAT、PUSH、VLU 風險工具、A-PePSI LIGhT、SINBAD、DESIGN-R</p>
+      <span class="tag tag-tool">BWAT</span><span class="tag tag-tool">PWAT</span><span class="tag tag-tool">PUSH</span><span class="tag tag-tool">VLU</span><span class="tag tag-tool">SINBAD</span>
+    </div>
+    <div class="card">
+      <h3>🤖 預測模型</h3>
+      <div class="meta">7 種 ML/DL 模型，AUC 最高 0.955</div>
+      <p>從傳統統計到深度學習、多模態 AI、可解釋 AI</p>
+      <span class="tag tag-model">ANN</span><span class="tag tag-model">LSTM</span><span class="tag tag-model">XGBoost</span><span class="tag tag-model">Deeplabv3+</span>
+    </div>
+    <div class="card">
+      <h3>📚 文獻</h3>
+      <div class="meta">15 篇 PubMed 文獻，2022–2025 年</div>
+      <p>含系統性回顧、預測模型開發、AI 評估工具開發</p>
+      <span class="tag tag-lit">系統性回顧</span><span class="tag tag-lit">回顧研究</span>
+    </div>
+    <div class="card">
+      <h3>🧠 核心概念</h3>
+      <div class="meta">5 個關鍵研究概念</div>
+      <p>癒合預測、傷口評估、慢性傷口、多模態資料、可解釋 AI</p>
+      <span class="tag tag-concept">多模態</span><span class="tag tag-concept">可解釋 AI</span>
+    </div>
+  </div>
+  <h3 style="margin:20px 0 10px;">🔑 重點發現</h3>
+  <div class="card">
+    <ul style="padding-left:20px;">
+      <li><strong>CTA+ANN</strong> 模型準確率最高（91.6%，AUC 0.955），用於 DFU 預測</li>
+      <li><strong>LSTM</strong> 模型適合時序性傷口資料（準確率 80%，AUC 0.85）</li>
+      <li><strong>XGBoost + SHAP</strong> 提供可解釋性（AUROC 0.924）</li>
+      <li><strong>AI 評估工具</strong> 傷口分割 DICE 達 92%，行動裝置推論僅 0.3 秒</li>
+      <li><strong>SINBAD ≥ 4</strong> 的病人再截肢率達 90.9%</li>
+      <li><strong>BWAT</strong> 是最廣泛使用的 13 項評估量表（總分 13–65）</li>
+    </ul>
+  </div>
+</div>
+
+<!-- TOOLS -->
+<div id="tools" class="section">
+  <h2 style="margin-bottom:16px;">📋 評估工具</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>📏 BWAT — Bates-Jensen Wound Assessment Tool</h3>
+      <div class="meta">13 項評估 | 總分 13–65 | 慢性傷口</div>
+      <p>臨床最廣泛使用的慢性傷口評估量表。每個項目評分 1–5 分，<strong>分數越低越好</strong>。</p>
+      <table><tr><th>項目</th><th>說明</th></tr><tr><td>1. 傷口大小</td><td>傷口面積</td></tr><tr><td>2. 傷口深度</td><td>組織受損深度</td></tr><tr><td>3. 邊緣狀態</td><td>傷口邊緣完整性</td></tr><tr><td>4–5. 壞死組織</td><td>類型與量</td></tr><tr><td>6–7. 滲出液</td><td>類型與量</td></tr><tr><td>8–10. 周圍皮膚</td><td>顏色、水腫、浸潤</td></tr><tr><td>11. 肉芽組織</td><td>肉芽生長狀況</td></tr><tr><td>12. 上皮化</td><td>上皮再生程度</td></tr><tr><td>13. 傷口形狀</td><td>規則/不規則</td></tr></table>
+      <p style="margin-top:8px;"><strong>自動化：</strong>Ramachandram 2022 利用深度學習自動化組織分割，IoU 達 0.8644。</p>
+      <span class="tag tag-tool">13項</span><span class="tag tag-tool">慢性傷口</span>
+    </div>
+    <div class="card">
+      <h3>📸 PWAT — Photographic Wound Assessment Tool</h3>
+      <div class="meta">6 項評估 | 適用 2D/3D 影像</div>
+      <p>透過攝影影像進行標準化評估，適用 2D 與 3D 傷口資料。</p>
+      <p><strong>自動化：</strong>Curti 2024 以深度學習預測 PWAT 分數，Spearman 相關係數達 <strong>0.85</strong>。</p>
+      <span class="tag tag-tool">6項</span><span class="tag tag-tool">影像</span>
+    </div>
+    <div class="card">
+      <h3>🩺 PUSH Tool — Pressure Ulcer Scale for Healing</h3>
+      <div class="meta">3 項評估 | 總分 0–17 | 壓瘡</div>
+      <p>簡單易用的壓瘡癒合量表。</p>
+      <table><tr><th>項目</th><th>評分</th></tr><tr><td>傷口面積（長×寬）</td><td>0–10</td></tr><tr><td>滲出液量</td><td>0–3</td></tr><tr><td>組織類型</td><td>0–4</td></tr></table>
+      <span class="tag tag-tool">3項</span><span class="tag tag-tool">壓瘡</span>
+    </div>
+    <div class="card">
+      <h3>🦵 VLU 風險評估工具</h3>
+      <div class="meta">10 項評估 | AUC 0.74 | 靜脈性腿部潰瘍</div>
+      <p>預測 VLU 延遲癒合的風險評估工具。Parker 2023 進行國際多中心驗證。</p>
+      <span class="tag tag-tool">10項</span><span class="tag tag-tool">VLU</span>
+    </div>
+    <div class="card">
+      <h3>⚠️ A-PePSI LIGhT</h3>
+      <div class="meta">10 項風險因子 | 壓瘡術後癒合不良風險</div>
+      <p>評估壓瘡手術後癒合不良風險的工具。</p>
+      <span class="tag tag-tool">10項</span><span class="tag tag-tool">壓瘡</span><span class="tag tag-tool">術後風險</span>
+    </div>
+    <div class="card">
+      <h3>🦶 SINBAD 分類</h3>
+      <div class="meta">≥4 分再截肢率 90.9% | DFU</div>
+      <p>預測糖尿病足病人經蹠骨截肢（TMA）後再截肢風險。</p>
+      <p><strong>Jin 2025：</strong>SINBAD ≥ 4 的病人再截肢率達 <strong>90.9%</strong>（OR 6.76, p < 0.001）。</p>
+      <span class="tag tag-tool">DFU</span><span class="tag tag-tool">截肢風險</span>
+    </div>
+    <div class="card">
+      <h3>📐 DESIGN-R 2020</h3>
+      <div class="meta">壓瘡嚴重度評估 | 貝氏模型預測</div>
+      <p>Kitamura 2025 使用階層貝氏模型預測 DESIGN-R 分數變化，90% 預測區間覆蓋率 0.67–0.86。</p>
+      <span class="tag tag-tool">壓瘡</span><span class="tag tag-tool">貝氏模型</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODELS -->
+<div id="models" class="section">
+  <h2 style="margin-bottom:16px;">🤖 預測模型</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>🧠 CTA + ANN</h3>
+      <div class="meta">準確率 91.6% | AUC 0.955 | 敏感度 92.3% | 特異度 93.5%</div>
+      <p>Zhang 2022 使用電腦斷層血管攝影（CTA）影像結合人工神經網路（ANN）預測 DFU。</p>
+      <div style="margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>準確率</span><span>91.6%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:91.6%;background:var(--green);"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>AUC</span><span>0.955</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:95.5%;background:var(--green);"></div></div>
+      </div>
+      <span class="tag tag-model">ANN</span><span class="tag tag-model">CTA</span><span class="tag tag-model">DFU</span>
+    </div>
+    <div class="card">
+      <h3>🔄 LSTM</h3>
+      <div class="meta">準確率 80% | AUC 0.85 | 敏感度 80%</div>
+      <p>Spinazzola 2025 使用三層 LSTM 分析 1766 個 DFU 傷口，追蹤至少 3 次就診。</p>
+      <div style="margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>準確率</span><span>80%</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:80%;background:var(--yellow);"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>AUC</span><span>0.85</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:85%;background:var(--yellow);"></div></div>
+      </div>
+      <p><strong>重要因子：</strong>首次就診傷口深度與面積、第二次就診傷口面積與肉芽組織百分比。</p>
+      <span class="tag tag-model">LSTM</span><span class="tag tag-model">時序性</span><span class="tag tag-model">DFU</span>
+    </div>
+    <div class="card">
+      <h3>🌲 XGBoost</h3>
+      <div class="meta">AUC 0.85 | DFU 復發預測</div>
+      <p>Zhang 2025 使用 XGBoost 預測 DFU 復發，AUC 0.85。</p>
+      <div style="margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>AUC</span><span>0.85</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:85%;background:var(--yellow);"></div></div>
+      </div>
+      <span class="tag tag-model">XGBoost</span><span class="tag tag-model">DFU</span><span class="tag tag-model">復發</span>
+    </div>
+    <div class="card">
+      <h3>🔍 可解釋 XGBoost + SHAP</h3>
+      <div class="meta">AUROC 0.924 | DFU 復發預測</div>
+      <p>Mou 2025 結合 XGBoost 與 SHAP 可解釋性分析，AUROC 0.924。</p>
+      <div style="margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-size:0.85em;"><span>AUROC</span><span>0.924</span></div>
+        <div class="score-bar"><div class="score-fill" style="width:92.4%;background:var(--green);"></div></div>
+      </div>
+      <span class="tag tag-model">XGBoost</span><span class="tag tag-model">SHAP</span><span class="tag tag-model">可解釋 AI</span>
+    </div>
+    <div class="card">
+      <h3>📱 AI 評估工具</h3>
+      <div class="meta">DICE 92% | IoU 85% | 推論 0.3 秒</div>
+      <p>Stefanelli 2025 開發整合於行動應用程式的 AI 傷口評估工具。</p>
+      <tr><td>傷口分割 DICE</td><td><strong>92%</strong></td></tr>
+      <tr><td>傷口分割 IoU</td><td><strong>85%</strong></td></tr>
+      <tr><td>組織分類 DICE</td><td><strong>78%</strong></td></tr>
+      <tr><td>行動裝置推論</td><td><strong>0.3 秒</strong></td></tr>
+      <tr><td>資料類型</td><td>影像 + 3D + 臨床</td></tr>
+      <span class="tag tag-model">Deeplabv3+</span><span class="tag tag-model">多模態</span><span class="tag tag-model">行動裝置</span>
+    </div>
+    <div class="card">
+      <h3>🏠 多模態轉介決策</h3>
+      <div class="meta">居家傷口照護 | 自動化轉介</div>
+      <p>Fard 2025 開發多模態 AI 系統，用於居家傷口病患的轉介決策。</p>
+      <span class="tag tag-model">多模態 AI</span><span class="tag tag-model">轉介</span><span class="tag tag-model">居家照護</span>
+    </div>
+    <div class="card">
+      <h3>🔬 組織分割與量化</h3>
+      <div class="meta">Dice 76.82% | IoU 62.95%</div>
+      <p>Morgado 2025 使用 DeepLabV3-R50 進行慢性傷口組織分割。</p>
+      <tr><td>組織分割平均 IoU</td><td><strong>62.95%</strong></td></tr>
+      <tr><td>組織分割平均 Dice</td><td><strong>76.82%</strong></td></tr>
+      <tr><td>完整框架 Dice</td><td><strong>74.38%</strong></td></tr>
+      <span class="tag tag-model">DeepLabV3</span><span class="tag tag-model">分割</span>
+    </div>
+  </div>
+</div>
+
+<!-- LITERATURE -->
+<div id="literature" class="section">
+  <h2 style="margin-bottom:16px;">📚 文獻筆記</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Ramachandram 2022 — BWAT 自動化組織分割</h3>
+      <div class="meta">JMIR Mhealth Uhealth | PMID: 35678781 | 引用: 15</div>
+      <p>利用深度學習在行動裝置上自動化 BWAT 評估中的組織分割。</p>
+      <p><strong>關鍵發現：</strong>傷口分割 IoU 0.8644，組織分割 IoU 0.7192。</p>
+      <span class="tag tag-lit">BWAT</span><span class="tag tag-lit">深度學習</span>
+    </div>
+    <div class="card">
+      <h3>Curti 2024 — PWAT 自動化預測</h3>
+      <div class="meta">J Med Syst | PMID: 38227131 | 引用: 10</div>
+      <p>深度學習管線自動預測 PWAT 分數。</p>
+      <p><strong>關鍵發現：</strong>Spearman 相關係數 0.85。</p>
+      <span class="tag tag-lit">PWAT</span><span class="tag tag-lit">深度學習</span>
+    </div>
+    <div class="card">
+      <h3>Parker 2023 — VLU 風險工具國際驗證</h3>
+      <div class="meta">J Wound Care | PMID: 36757912 | 引用: 22</div>
+      <p>VLU 風險評估工具國際多中心驗證。</p>
+      <p><strong>關鍵發現：</strong>AUC 0.74。</p>
+      <span class="tag tag-lit">VLU</span><span class="tag tag-lit">驗證</span>
+    </div>
+    <div class="card">
+      <h3>Zhang 2022 — CTA 影像 DFU 預測</h3>
+      <div class="meta">Diagnostics | PMID: 35626234 | 引用: 7</div>
+      <p>CTA 影像結合 ANN 預測 DFU。</p>
+      <p><strong>關鍵發現：</strong>準確率 91.6%，AUC 0.955。</p>
+      <span class="tag tag-lit">CTA</span><span class="tag tag-lit">ANN</span><span class="tag tag-lit">DFU</span>
+    </div>
+    <div class="card">
+      <h3>Spinazzola 2025 — ML 慢性傷口癒合預測</h3>
+      <div class="meta">J Clin Med | PMID: 40363975 | 引用: 8</div>
+      <p>12 個模型比較，LSTM 表現最佳。</p>
+      <p><strong>關鍵發現：</strong>準確率 80%，AUC 0.85，F1 0.80。</p>
+      <span class="tag tag-lit">LSTM</span><span class="tag tag-lit">ML</span><span class="tag tag-lit">DFU</span>
+    </div>
+    <div class="card">
+      <h3>Zhang 2025 — XGBoost DFU 復發預測</h3>
+      <div class="meta">Front Endocrinol | 引用: 12</div>
+      <p>XGBoost 預測 DFU 復發。</p>
+      <p><strong>關鍵發現：</strong>AUC 0.85。</p>
+      <span class="tag tag-lit">XGBoost</span><span class="tag tag-lit">DFU</span><span class="tag tag-lit">復發</span>
+    </div>
+    <div class="card">
+      <h3>Mou 2025 — 可解釋 ML DFU 復發預測</h3>
+      <div class="meta">BMJ Open Diabetes Res Care | 引用: 6</div>
+      <p>XGBoost + SHAP 可解釋性分析。</p>
+      <p><strong>關鍵發現：</strong>AUROC 0.924。</p>
+      <span class="tag tag-lit">XGBoost</span><span class="tag tag-lit">SHAP</span><span class="tag tag-lit">可解釋 AI</span>
+    </div>
+    <div class="card">
+      <h3>Silva 2025 — DFU 分類模型系統性回顧</h3>
+      <div class="meta">J Med Internet Res | PMID: 40991939 | 引用: 10</div>
+      <p>DFU 分類模型系統性回顧，11 項研究，55 個模型。</p>
+      <p><strong>關鍵發現：</strong>AUROC 0.56–0.94，所有研究均為高偏倚風險。</p>
+      <span class="tag tag-lit">系統性回顧</span><span class="tag tag-lit">DFU</span>
+    </div>
+    <div class="card">
+      <h3>Stefanelli 2025 — AI 傷口評估工具開發</h3>
+      <div class="meta">BMC Med Inform Decis Mak | PMID: 40783534 | 引用: 9</div>
+      <p>瑞士三機構多中心研究，4000 張傷口影像。</p>
+      <p><strong>關鍵發現：</strong>分割 DICE 92%，組織分類 DICE 78%，推論 0.3 秒。</p>
+      <span class="tag tag-lit">AI</span><span class="tag tag-lit">多模態</span><span class="tag tag-lit">行動裝置</span>
+    </div>
+    <div class="card">
+      <h3>Fard 2025 — 多模態 AI 居家傷口轉介</h3>
+      <div class="meta">IEEE J Transl Eng Health Med | 引用: 3</div>
+      <p>多模態 AI 系統用於居家傷口轉介決策。</p>
+      <span class="tag tag-lit">多模態 AI</span><span class="tag tag-lit">轉介</span><span class="tag tag-lit">居家照護</span>
+    </div>
+    <div class="card">
+      <h3>Kitamura 2025 — 壓瘡癒合趨勢預測</h3>
+      <div class="meta">JMIR Nurs | PMID: 41364745 | 引用: 1</div>
+      <p>貝氏模型預測 DESIGN-R 分數變化。</p>
+      <p><strong>關鍵發現：</strong>90% 預測區間覆蓋率 0.67–0.86。</p>
+      <span class="tag tag-lit">貝氏模型</span><span class="tag tag-lit">壓瘡</span><span class="tag tag-lit">DESIGN-R</span>
+    </div>
+    <div class="card">
+      <h3>Jin 2025 — SINBAD 預測 TMA 術後再截肢</h3>
+      <div class="meta">Int Wound J | PMID: 41116626 | 引用: 0</div>
+      <p>SINBAD 分類預測 TMA 術後 6 個月再截肢。</p>
+      <p><strong>關鍵發現：</strong>SINBAD ≥ 4 再截肢率 90.9%（OR 6.76）。</p>
+      <span class="tag tag-lit">SINBAD</span><span class="tag tag-lit">TMA</span><span class="tag tag-lit">截肢</span>
+    </div>
+    <div class="card">
+      <h3>Sari 2025 — 非侵入影像預測 DFU 癒合</h3>
+      <div class="meta">Front Med Technol | PMID: 41089884 | 引用: 1</div>
+      <p>10 年系統性回顧，22 項研究。</p>
+      <p><strong>關鍵發現：</strong>攝影 + 熱成像結合 ML/DL 具有早期預測潛力。</p>
+      <span class="tag tag-lit">系統性回顧</span><span class="tag tag-lit">非侵入影像</span><span class="tag tag-lit">DFU</span>
+    </div>
+    <div class="card">
+      <h3>Al-Juhani 2025 — ML 預測下肢血管重建後癒合</h3>
+      <div class="meta">Cureus | PMID: 40861652 | 引用: 2</div>
+      <p>系統性回顧 ML 預測下肢血管重建術後結果。</p>
+      <span class="tag tag-lit">系統性回顧</span><span class="tag tag-lit">ML</span><span class="tag tag-lit">血管重建</span>
+    </div>
+    <div class="card">
+      <h3>Morgado 2025 — 慢性傷口組織分割</h3>
+      <div class="meta">Sci Rep | PMID: 40594951 | 引用: 0</div>
+      <p>DeepLabV3-R50 組織分割與量化。</p>
+      <p><strong>關鍵發現：</strong>組織分割 Dice 76.82%，IoU 62.95%。</p>
+      <span class="tag tag-lit">分割</span><span class="tag tag-lit">DeepLabV3</span><span class="tag tag-lit">量化</span>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARISON -->
+<div id="comparison" class="section">
+  <h2 style="margin-bottom:16px;">📈 效能比較</h2>
+  <div class="card">
+    <h3>預測模型效能比較</h3>
+    <table>
+      <tr><th>模型</th><th>準確率</th><th>AUC/AUROC</th><th>資料類型</th><th>年份</th></tr>
+      <tr><td><strong>CTA+ANN</strong></td><td>91.6%</td><td>0.955</td><td>CTA 影像</td><td>2022</td></tr>
+      <tr><td><strong>XGBoost (Mou)</strong></td><td>—</td><td>0.924</td><td>臨床數據</td><td>2025</td></tr>
+      <tr><td><strong>AI 評估工具</strong></td><td>DICE 92%</td><td>—</td><td>影像+3D+臨床</td><td>2025</td></tr>
+      <tr><td><strong>LSTM</strong></td><td>80%</td><td>0.85</td><td>時序性資料</td><td>2025</td></tr>
+      <tr><td><strong>XGBoost</strong></td><td>—</td><td>0.85</td><td>臨床數據</td><td>2025</td></tr>
+      <tr><td><strong>組織分割</strong></td><td>Dice 76.8%</td><td>—</td><td>影像</td><td>2025</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>評估工具比較</h3>
+    <table>
+      <tr><th>工具</th><th>評估項目</th><th>總分範圍</th><th>適用範圍</th><th>AUC</th></tr>
+      <tr><td><strong>BWAT</strong></td><td>13</td><td>13–65</td><td>慢性傷口</td><td>—</td></tr>
+      <tr><td><strong>PWAT</strong></td><td>6</td><td>—</td><td>2D/3D 影像</td><td>—</td></tr>
+      <tr><td><strong>PUSH</strong></td><td>3</td><td>0–17</td><td>壓瘡</td><td>—</td></tr>
+      <tr><td><strong>VLU 風險</strong></td><td>10</td><td>—</td><td>VLU</td><td>0.74</td></tr>
+      <tr><td><strong>SINBAD</strong></td><td>6</td><td>0–6</td><td>DFU</td><td>—</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>依傷口類型分類</h3>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr));">
+      <div><h4>🦶 DFU</h4><ul style="padding-left:18px;"><li>CTA+ANN</li><li>XGBoost 復發</li><li>可解釋 XGBoost</li><li>LSTM</li><li>SINBAD</li></ul></div>
+      <div><h4>🩺 壓瘡</h4><ul style="padding-left:18px;"><li>PUSH Tool</li><li>A-PePSI LIGhT</li><li>DESIGN-R</li></ul></div>
+      <div><h4>🦵 VLU</h4><ul style="padding-left:18px;"><li>VLU 風險評估</li></ul></div>
+      <div><h4>🩹 一般慢性傷口</h4><ul style="padding-left:18px;"><li>BWAT</li><li>PWAT</li><li>AI 評估工具</li><li>多模態轉介</li></ul></div>
+    </div>
+  </div>
+</div>
+
+<!-- KNOWLEDGE GRAPH (純 CSS/HTML 呈現) -->
+<div id="kg" class="section">
+  <h2 style="margin-bottom:16px;">🕸️ 知識圖譜</h2>
+  <div class="card">
+    <h3>模型演進</h3>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;">
+      <span class="kg-node" style="background:#ffcccc;color:#333;">傳統統計<br/>邏輯迴歸</span>
+      <span style="color:var(--text2);">→</span>
+      <span class="kg-node" style="background:#ffffcc;color:#333;">機器學習<br/>XGBoost/RF</span>
+      <span style="color:var(--text2);">→</span>
+      <span class="kg-node" style="background:#ccffcc;color:#333;">深度學習<br/>ANN/LSTM</span>
+      <span style="color:var(--text2);">→</span>
+      <span class="kg-node" style="background:#ccffff;color:#333;">多模態 AI<br/>影像+3D+臨床</span>
+      <span style="color:var(--text2);">→</span>
+      <span class="kg-node" style="background:#ccccff;color:#333;">可解釋 AI<br/>SHAP+XAI</span>
+    </div>
+  </div>
+  <div class="card">
+    <h3>評估工具關聯</h3>
+    <div style="margin:12px 0;">
+      <div style="margin-bottom:8px;"><span class="kg-node" style="background:#4a148c;color:#e1bee7;">BWAT 13項</span> ← 慢性傷口 → <span class="kg-node" style="background:#4a148c;color:#e1bee7;">PWAT 6項</span></div>
+      <div style="margin-bottom:8px;"><span class="kg-node" style="background:#4a148c;color:#e1bee7;">PUSH 3項</span> ← 壓瘡 → <span class="kg-node" style="background:#4a148c;color:#e1bee7;">DESIGN-R</span></div>
+      <div style="margin-bottom:8px;"><span class="kg-node" style="background:#4a148c;color:#e1bee7;">VLU 風險 10項</span> ← 靜脈性腿部潰瘍</div>
+      <div style="margin-bottom:8px;"><span class="kg-node" style="background:#4a148c;color:#e1bee7;">SINBAD</span> ← DFU → <span class="kg-node" style="background:#1b5e20;color:#a5d6a7;">CTA+ANN</span></div>
+      <div style="margin-bottom:8px;"><span class="kg-node" style="background:#1b5e20;color:#a5d6a7;">LSTM</span> ← 時序性資料 → <span class="kg-node" style="background:#1b5e20;color:#a5d6a7;">XGBoost+SHAP</span></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<div class="footer">
+  <p>🩹 傷口癒合預測模型知識圖譜 | 資料來源：PubMed MCP 搜尋 | 2022–2025 年文獻</p>
+</div>
+
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+</script>
+</body>
+</html>
